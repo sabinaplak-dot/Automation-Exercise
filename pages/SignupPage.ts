@@ -1,46 +1,67 @@
-import { Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
+
+type AccountDetails = {
+  title: "Mr" | "Mrs";
+  password: string;
+  day: string;
+  month: string;
+  year: string;
+  newsletter: boolean;
+  specialOffers: boolean;
+  firstName: string;
+  lastName: string;
+  company: string;
+  address: string;
+  address2: string;
+  country: string;
+  state: string;
+  city: string;
+  zipcode: string;
+  mobileNumber: string;
+};
 
 export class SignupPage {
-  private page: Page;
+  private readonly page: Page;
 
   // Strona główna
-  private signupLoginLink;
+  private readonly signupLoginLink: Locator;
 
   // Formularz rejestracji
-  private newUserSignupHeading;
-  private signupNameInput;
-  private signupEmailInput;
-  private signupButton;
+  private readonly newUserSignupHeading: Locator;
+  private readonly signupNameInput: Locator;
+  private readonly signupEmailInput: Locator;
+  private readonly signupButton: Locator;
 
   // Informacje o koncie
-  private accountInformationHeading;
-  private mrsRadio;
-  private passwordInput;
-  private daySelect;
-  private monthSelect;
-  private yearSelect;
-  private newsletterCheckbox;
-  private specialOffersCheckbox;
+  private readonly accountInformationHeading: Locator;
+  private readonly mrRadio: Locator;
+  private readonly mrsRadio: Locator;
+  private readonly passwordInput: Locator;
+  private readonly daySelect: Locator;
+  private readonly monthSelect: Locator;
+  private readonly yearSelect: Locator;
+  private readonly newsletterCheckbox: Locator;
+  private readonly specialOffersCheckbox: Locator;
 
   // Dane adresowe
-  private firstNameInput;
-  private lastNameInput;
-  private companyInput;
-  private addressInput;
-  private address2Input;
-  private countrySelect;
-  private stateInput;
-  private cityInput;
-  private zipcodeInput;
-  private mobileNumberInput;
+  private readonly firstNameInput: Locator;
+  private readonly lastNameInput: Locator;
+  private readonly companyInput: Locator;
+  private readonly addressInput: Locator;
+  private readonly address2Input: Locator;
+  private readonly countrySelect: Locator;
+  private readonly stateInput: Locator;
+  private readonly cityInput: Locator;
+  private readonly zipcodeInput: Locator;
+  private readonly mobileNumberInput: Locator;
 
   // Przyciski i komunikaty końcowe
-  private createAccountButton;
-  private accountCreatedHeading;
-  private continueLink;
-  private deleteAccountLink;
-  private accountDeletedHeading;
-  private consentButton;
+  private readonly createAccountButton: Locator;
+  private readonly accountCreatedHeading: Locator;
+  private readonly continueLink: Locator;
+  private readonly deleteAccountLink: Locator;
+  private readonly accountDeletedHeading: Locator;
+  private readonly consentButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -70,6 +91,7 @@ export class SignupPage {
       /Enter Account Information/i,
     );
 
+    this.mrRadio = page.locator("#id_gender1");
     this.mrsRadio = page.locator("#id_gender2");
     this.passwordInput = page.locator("#password");
     this.daySelect = page.locator("#days");
@@ -91,7 +113,7 @@ export class SignupPage {
     this.zipcodeInput = page.locator("#zipcode");
     this.mobileNumberInput = page.locator("#mobile_number");
 
-    // Przycisk i komunikat końcowy
+    // Przyciski i komunikaty końcowe
     this.createAccountButton = page.getByRole("button", {
       name: "Create Account",
     });
@@ -119,14 +141,38 @@ export class SignupPage {
 
   // Otwarcie strony
   async open(): Promise<void> {
-    await this.page.goto("https://automationexercise.com/");
+    await this.page.goto("https://automationexercise.com/", {
+      waitUntil: "domcontentloaded",
+      timeout: 60000,
+    });
   }
 
-  // Obsługa okna zgody (jeśli się pojawi)
+  // Obsługa okna zgody
   async handleConsentIfVisible(): Promise<void> {
     if (await this.consentButton.isVisible().catch(() => false)) {
       await this.consentButton.click();
     }
+  }
+
+  // Asercje widoczności elementów
+  async expectSignupLoginVisible(): Promise<void> {
+    await expect(this.signupLoginLink).toBeVisible();
+  }
+
+  async expectNewUserSignupVisible(): Promise<void> {
+    await expect(this.newUserSignupHeading).toBeVisible();
+  }
+
+  async expectAccountInformationVisible(): Promise<void> {
+    await expect(this.accountInformationHeading).toBeVisible();
+  }
+
+  async expectAccountCreatedVisible(): Promise<void> {
+    await expect(this.accountCreatedHeading).toBeVisible();
+  }
+
+  async expectAccountDeletedVisible(): Promise<void> {
+    await expect(this.accountDeletedHeading).toBeVisible();
   }
 
   // Przejście do rejestracji
@@ -142,27 +188,35 @@ export class SignupPage {
   }
 
   // Wypełnienie informacji o koncie i adresie
-  async fillAccountInformation(): Promise<void> {
-    await this.mrsRadio.check();
-    await this.passwordInput.fill("Test123!");
+  async fillAccountInformation(details: AccountDetails): Promise<void> {
+    // Wybór tytułu
+    if (details.title === "Mrs") {
+      await this.mrsRadio.check();
+    } else {
+      await this.mrRadio.check();
+    }
 
-    await this.daySelect.selectOption("28");
-    await this.monthSelect.selectOption("2");
-    await this.yearSelect.selectOption("2002");
+    // Dane konta
+    await this.passwordInput.fill(details.password);
+    await this.daySelect.selectOption(details.day);
+    await this.monthSelect.selectOption(details.month);
+    await this.yearSelect.selectOption(details.year);
 
-    await this.newsletterCheckbox.check();
-    await this.specialOffersCheckbox.check();
+    // Zgody
+    await this.newsletterCheckbox.setChecked(details.newsletter);
+    await this.specialOffersCheckbox.setChecked(details.specialOffers);
 
-    await this.firstNameInput.fill("Sabina");
-    await this.lastNameInput.fill("Plak");
-    await this.companyInput.fill("Craftware");
-    await this.addressInput.fill("Marca polo 21");
-    await this.address2Input.fill("Marca polo 33");
-    await this.countrySelect.selectOption("United States");
-    await this.stateInput.fill("Poland");
-    await this.cityInput.fill("Wrocław");
-    await this.zipcodeInput.fill("51-505");
-    await this.mobileNumberInput.fill("691777892");
+    // Dane adresowe
+    await this.firstNameInput.fill(details.firstName);
+    await this.lastNameInput.fill(details.lastName);
+    await this.companyInput.fill(details.company);
+    await this.addressInput.fill(details.address);
+    await this.address2Input.fill(details.address2);
+    await this.countrySelect.selectOption(details.country);
+    await this.stateInput.fill(details.state);
+    await this.cityInput.fill(details.city);
+    await this.zipcodeInput.fill(details.zipcode);
+    await this.mobileNumberInput.fill(details.mobileNumber);
   }
 
   // Utworzenie konta
