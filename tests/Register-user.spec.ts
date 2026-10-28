@@ -43,6 +43,8 @@ test("Register User", async ({ page }) => {
     mobileNumber: "691777892",
   });
 
+  await signupPage.handleConsentIfVisible();
+
   // 13. Utwórz konto
   await signupPage.createAccount();
 
