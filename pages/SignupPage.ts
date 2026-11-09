@@ -1,3 +1,4 @@
+
 import { expect, type Locator, type Page } from "@playwright/test";
 
 type AccountDetails = {
@@ -25,12 +26,20 @@ export class SignupPage {
 
   // Strona główna
   private readonly signupLoginLink: Locator;
+  private readonly homePageLogo: Locator;
 
   // Formularz rejestracji
   private readonly newUserSignupHeading: Locator;
   private readonly signupNameInput: Locator;
   private readonly signupEmailInput: Locator;
   private readonly signupButton: Locator;
+
+  // Formularz logowania - NOWE
+  private readonly loginHeading: Locator;
+  private readonly loginEmailInput: Locator;
+  private readonly loginPasswordInput: Locator;
+  private readonly loginButton: Locator;
+  private readonly signupErrorMessage: Locator;
 
   // Informacje o koncie
   private readonly accountInformationHeading: Locator;
@@ -62,12 +71,18 @@ export class SignupPage {
   private readonly deleteAccountLink: Locator;
   private readonly accountDeletedHeading: Locator;
   private readonly consentButton: Locator;
+  private readonly loginErrorMessage: Locator;
+
+  // Wylogowanie użytkownika
+private readonly logoutLink: Locator;
+
 
   constructor(page: Page) {
     this.page = page;
 
     // Strona główna
     this.signupLoginLink = page.locator('a[href="/login"]');
+    this.homePageLogo = page.locator(".logo");
 
     // Formularz rejestracji
     this.newUserSignupHeading = page.getByText("New User Signup!", {
@@ -86,10 +101,37 @@ export class SignupPage {
       'form[action="/signup"] button[type="submit"]',
     );
 
+    this.signupErrorMessage = page.getByText(
+  "Email Address already exist!",
+  { exact: true },
+);
+
+    // Formularz logowania - NOWE
+    this.loginHeading = page.getByText("Login to your account", {
+      exact: true,
+    });
+
+    this.loginEmailInput = page.locator(
+      'form[action="/login"] input[name="email"]',
+    );
+
+    this.loginPasswordInput = page.locator(
+      'form[action="/login"] input[name="password"]',
+    );
+
+    this.loginButton = page.locator(
+      'form[action="/login"] button[type="submit"]',
+    );
+
     // Informacje o koncie
     this.accountInformationHeading = page.getByText(
       /Enter Account Information/i,
     );
+
+    this.loginErrorMessage = page.getByText(
+  "Your email or password is incorrect!",
+  { exact: true },
+);
 
     this.mrRadio = page.locator("#id_gender1");
     this.mrsRadio = page.locator("#id_gender2");
@@ -127,10 +169,12 @@ export class SignupPage {
     });
 
     this.deleteAccountLink = page.locator('a[href="/delete_account"]');
-
+    this.logoutLink = page.locator('a[href="/logout"]');
     this.accountDeletedHeading = page.getByText("Account Deleted!", {
       exact: true,
     });
+
+    
 
     // Przycisk zgody na stronie
     this.consentButton = page.getByRole("button", {
@@ -173,6 +217,37 @@ export class SignupPage {
 
   async expectAccountDeletedVisible(): Promise<void> {
     await expect(this.accountDeletedHeading).toBeVisible();
+  }
+
+  async expectHomePageVisible(): Promise<void> {
+    await expect(this.homePageLogo).toBeVisible();
+  }
+
+  async expectLoginErrorVisible(): Promise<void> {
+  await expect(this.loginErrorMessage).toBeVisible();
+}
+
+async expectSignupErrorVisible(): Promise<void> {
+  await expect(this.signupErrorMessage).toBeVisible();
+}
+
+  // NOWA metoda - sprawdzenie nagłówka logowania
+  async expectLoginHeadingVisible(): Promise<void> {
+    await expect(this.loginHeading).toBeVisible();
+  }
+
+  // NOWA metoda - logowanie użytkownika
+  async login(email: string, password: string): Promise<void> {
+    await this.loginEmailInput.fill(email);
+    await this.loginPasswordInput.fill(password);
+    await this.loginButton.click();
+  }
+
+  // NOWA metoda - sprawdzenie zalogowanego użytkownika
+  async expectLoggedInAsVisible(username: string): Promise<void> {
+    await expect(
+      this.page.getByText(`Logged in as ${username}`, { exact: true }),
+    ).toBeVisible();
   }
 
   // Przejście do rejestracji
@@ -228,6 +303,11 @@ export class SignupPage {
   async continue(): Promise<void> {
     await this.continueLink.click();
   }
+
+  // Wylogowanie użytkownika
+async logout(): Promise<void> {
+  await this.logoutLink.click();
+}
 
   // Usunięcie konta
   async deleteAccount(): Promise<void> {
